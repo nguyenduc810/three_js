@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang = "en">
+<head>
+    <title> Project </title>
+</head>
+<body>
+<div id = "screen"></div>
+<script type="importmap">
+    {
+        "imports": {
+            "three": "../build/three.module.js",
+            "three/addons/": "./jsm/"
+        }
+    }
+</script>
+<script type="module">
+    //import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+            import * as THREE from 'three';
+
+			import Stats from 'three/addons/libs/stats.module.js';
+			import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+            import {TrackballControls } from 'three/addons/controls/TrackballControls.js';
+			import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    function init(){
+        const scene = new THREE.Scene();
+        window.addEventListener("resize", onResize, false);
+        function onResize(){
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            cam.aspect = window.innerWidth/window.innerHeight;
+            cam.updateProjectionMatrix();
+        }
+
+        // set up camera
+        const cam = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+        cam.position.set(0, 15, 30);
+        cam.lookAt(scene.position);
+
+        // render
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        //renderer.setClearColor("#333131");
+        renderer.shadowMap.Enabled = true;
+        document.querySelector("#screen").appendChild(renderer.domElement);
+
+        // ánh sáng môi trường
+        const Ambientlight = new THREE.AmbientLight( 0x404040 ); // soft white light
+        scene.add( Ambientlight );
+
+        // Point light
+        let pointLight = new THREE.PointLight("#ffffff", 1, 0);
+        pointLight.position.set(100, 100, 100);
+        scene.add(pointLight);
+        pointLight.castShadow = true;
+
+        //scene.fog = new THREE.Fog( 0xffffff, 0.015, 100 ); 
+
+
+        let trackballControls = new TrackballControls(cam, renderer.domElement);
+        trackballControls.rotateSpeed = 1.0;
+        trackballControls.zoomSpeed = 1.0;
+        trackballControls.panSpeed = 1.0;
+
+        const clock = new THREE.Clock();
+
+
+        let url = "textures/grass-field.jpg";
+        let url_ = "models/gltf/plaster-normal.jpg"
+        let textureLoader = new THREE.TextureLoader(); 
+        let texture = textureLoader.load(url);
+        let normal_map = textureLoader.load(url_);
+
+        // GROUND
+
+        const groundGeo = new THREE.PlaneGeometry( 100, 100 );
+        const groundMat = new THREE.MeshLambertMaterial( { color: 0xffffff, map : texture , normalMap: normal_map, side: THREE.DoubleSide} );
+        //groundMat.color.setHSL( 0.095, 1, 0.75 );
+        const ground = new THREE.Mesh( groundGeo, groundMat );
+        ground.position.y = 0;
+        ground.rotation.x = - Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add( ground );
+
+        // set background
+        const path = 'textures/cube/skyboxsun25deg/';
+        const format = '.jpg';
+        const urls = [
+            path + 'px' + format, path + 'nx' + format,
+            path + 'py' + format, path + 'ny' + format,
+            path + 'pz' + format, path + 'nz' + format
+        ];
+
+        const textureCube = new THREE.CubeTextureLoader().load( urls );
+
+        const spheres = [];
+        scene.background = textureCube;
+
+        const geometry = new THREE.SphereGeometry( 0.01, 32, 16 );
+        const material = new THREE.MeshBasicMaterial( { color: 0xffffff, envMap: textureCube } );
+
+        // chim hồng hạc
+        const mixers = [];
+        let url_2 = "textures/long_hong_hac.jpg" 
+        let texture_2 = textureLoader.load(url_2);
+        const loader = new GLTFLoader();
+		loader.load( 'models/gltf/Flamingo.glb', function ( gltf ){
+        const mesh = gltf.scene.children[ 0 ];
+                    mesh.material.normalMap = texture_2;
+                    mesh.material.bumpMap = texture_2;
+					const s = 0.05;
+					mesh.scale.set( s, s, s );
+					mesh.position.x = -15;
+					mesh.rotation.y = -20;
+                    mesh.position.z = -2
+                    mesh.position.y =30
+
+					mesh.castShadow = true;
+					mesh.receiveShadow = true;
+
+					scene.add( mesh );
+
+                    // const mixer = new THREE.AnimationMixer( mesh );
+					// mixer.clipAction( gltf.animations[ 0 ] ).setDuration( 1 ).play();
+					// mixers.push( mixer );
+        })
+
+        // Ngựa 
+        //brown-pony-fur-horse-animal-preview.jpg
+        let url_3 = "textures/brown-pony-fur-horse-animal-preview.jpg" 
+        let texture_3 = textureLoader.load(url_3);
+        const loader_2 = new GLTFLoader();
+
+		loader_2.load( 'models/gltf/Horse.glb', function ( gltf ){
+        
+        const mesh = gltf.scene.children[ 0 ];
+                    mesh.material.normalMap = texture_3;
+                    mesh.material.side = THREE.DoubleSide;
+                    //mesh.material.normalMap= normal_map
+					const s = 0.04;
+					mesh.scale.set( s, s, s );
+					mesh.position.y = 0;
+					mesh.rotation.y = 1 ;
+
+					mesh.castShadow = true;
+					mesh.receiveShadow = true;
+
+					scene.add( mesh );
+                    // const mixer = new THREE.AnimationMixer( mesh );
+					// mixer.clipAction( gltf.animations[ 0 ] ).setDuration( 1 ).play();
+					// mixers.push( mixer );
+        })
+
+        // Cây thông
+        const loader_3 = new GLTFLoader();
+
+		loader_3.load( 'models/gltf/pine.glb', function ( gltf ){
+        const mesh = gltf.scene.children[ 0 ];
+                    //mesh.material.map = texture;
+					const s = 2;
+					mesh.scale.set( s, s, s );
+					mesh.position.y = 0;
+					mesh.rotation.y = 0 ;
+
+					mesh.castShadow = true;
+					mesh.receiveShadow = true;
+
+					scene.add( mesh );
+        })
+
+        // island 
+        let url_4 = "textures/dat.jpg" 
+        let texture_4 = textureLoader.load(url_4);
+
+        const loader_4 = new GLTFLoader();
+		loader_4.load( 'models/gltf/island.glb', function ( gltf ){
+          //scene.add( gltf.scene );
+        const mesh = gltf.scene.children[ 0 ];
+                    mesh.material.map = texture_4;
+                    mesh.material.bumpMap = texture_4;
+                    mesh.material.side = THREE.DoubleSide;
+                    //mesh.material.normalMap= normal_map
+					const s = 50;
+					mesh.scale.set( s, s, s );
+					mesh.position.y = -50.1;
+                    mesh.position.x = 0;
+                    mesh.position.z = 0;
+					mesh.rotation.y = 0 ;
+
+					mesh.castShadow = true;
+					mesh.receiveShadow = true;
+
+					scene.add( mesh );
+        })
+
+        //cloud
+        const loader_5 = new GLTFLoader();
+        let url_5 = "textures/cloud.jpg" 
+        let texture_5 = textureLoader.load(url_5);
+        loader_5.load( 'models/gltf/cloud_ring_3.glb', function ( gltf ){
+        const mesh = gltf.scene.children[ 0 ];
+                    //console.log(mesh)
+                    mesh.material.map = texture_5;
+                    mesh.material.color = new THREE.Color( 0xf8f8ff );
+                    //mesh.material.side = THREE.DoubleSide;
+                    //mesh.material.normalMap= normal_map
+					const s = 20;
+					mesh.scale.set( s, s, s );
+					mesh.position.y = -35;
+                    mesh.position.x = 0;
+                    mesh.position.z = 0;
+					mesh.rotation.y = 0 ;
+
+					mesh.castShadow = true;
+					mesh.receiveShadow = true;
+
+					scene.add( mesh );
+        })
+
+        // Parrot model
+        const loader_6 = new GLTFLoader();
+        loader_6.load( 'models/gltf/Parrot.glb', function ( gltf ){
+        const mesh = gltf.scene.children[ 0 ];
+                    //console.log(mesh)
+					const s = 0.05;
+					mesh.scale.set( s, s, s );
+					mesh.position.y = 25;
+                    mesh.position.x = 20;
+                    mesh.position.z = -10;
+
+					mesh.castShadow = true;
+					mesh.receiveShadow = true;
+
+					scene.add( mesh );
+        })
+        
+        //stork
+        const loader_7 = new GLTFLoader();
+        loader_7.load( 'models/gltf/Stork.glb', function ( gltf ){
+        const mesh = gltf.scene.children[ 0 ];
+					const s = 0.05;
+					mesh.scale.set( s, s, s );
+					mesh.position.y = 35;
+                    mesh.position.x = 10;
+                    mesh.position.z = 5;
+					mesh.rotation.y = 30 ;
+
+					mesh.castShadow = true;
+					mesh.receiveShadow = true;
+
+					scene.add( mesh );
+                    const mixer = new THREE.AnimationMixer( mesh );
+					mixer.clipAction( gltf.animations[ 0 ] ).setDuration( 1 ).play();
+					mixers.push( mixer );
+        })
+
+
+        const meshs = []
+        //walking_tiger
+        //lop-da-ho-1.jpg
+        // let url_8 = "textures/lop-da-ho-1.jpg" 
+        // let texture_8 = textureLoader.load(url_8);
+        const loader_8 = new GLTFLoader();
+        loader_8.load( 'models/gltf/sumatran_tiger.glb', function ( gltf ){
+        const mesh = gltf.scene.children[ 0 ];
+                    //mesh.material.bumpMap = texture_8;
+					const s = 10;
+					mesh.scale.set( s, s, s );
+					mesh.position.y = 3;
+                    mesh.position.x = -5;
+                    mesh.position.z = 20;
+					
+					mesh.castShadow = true;
+					mesh.receiveShadow = true;
+
+					scene.add( mesh );
+                    meshs.push(mesh);
+        })
+
+        console.log(scene.children);
+        function myRender(){
+            let delta = clock.getDelta();
+            trackballControls.update(delta);
+
+            for ( let i = 0; i < mixers.length; i ++ ) {
+
+                mixers[ i ].update( delta );
+
+            }
+            // if (true){
+            //     scene.children[6].position.x = 10*(Math.sin(-0.01));
+            //     scene.children[6].position.z= -10*(Math.cos(-0.01));
+            // }
+
+            requestAnimationFrame(myRender);
+            renderer.render(scene, cam);
+        }
+        myRender();
+    }
+    init();
+</script>
+</body>
+</html>
